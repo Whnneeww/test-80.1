@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+        }
+        .sidebar {
+            width: 250px;
+            height: 100%;
+            background: #333;
+            color: white;
+            position: fixed;
+            right: -250px; /* Initially hidden */
+            transition: right 0.3s ease;
+        }
+        .sidebar.active {
+            right: 0; /* Slide in */
+        }
+        .sidebar h2 {
+            margin: 0;
+            padding: 10px;
+        }
+        .button {
+            padding: 10px 20px;
+            background: #fff;
+            color: #4CAF50;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+    <title>ウェブサイトタイトル</title>
+</head>
+<body>
+
+<header>
+    <div id="pageTitle">ページタイトル</div>
+    <button class="button" id="toggleBtn">目次</button>
+</header>
+
+<div class="sidebar" id="sidebar">
+    <h2>目次</h2>
+    <ul id="tocList"></ul>
+</div>
+
+<script>
+    const toggleBtn = document.getElementById('toggleBtn');
+    const sidebar = document.getElementById('sidebar');
+    const pageTitle = document.getElementById('pageTitle');
+    const tocList = document.getElementById('tocList');
+
+    function fetchJson() {
+        fetch('clist.json')
+            .then(response => response.json())
+            .then(data => {
+                const hash = window.location.hash.replace('#', '');
+                
+                // ここでデフォルトのタイトルと内容を設定
+                if (hash !== "") {
+                    const section = data.page.list.find(item => item.page-id == hash);
+                    
+                    if (section) {
+                        pageTitle.textContent = section.title;
+                        tocList.innerHTML = '';
+                        data.page.list.forEach(item => {
+                            const li = document.createElement('li');
+                            li.textContent = item.title;
+                            tocList.appendChild(li);
+                        });
+                    } else {
+                        pageTitle.textContent = '未定義のセクション';
+                    }
+                } else {
+                    // ハッシュがない場合はデフォルトのタイトルを表示
+                    pageTitle.textContent = data.title;
+                    tocList.innerHTML = '';
+                    data.page.list.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item.title;
+                        tocList.appendChild(li);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('JSONの取得に失敗しました', error);
+            });
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+    });
+
+    window.addEventListener('load', () => {
+        fetchJson();
+    });
+</script>
+
+</body>
+</html>
