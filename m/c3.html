@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音声波形反転</title>
+</head>
+<body>
+    <h1>音声ファイルの波形を反転してダウンロード</h1>
+    <input type="file" id="audioFile" accept="audio/*">
+    <button id="reverseButton">波形反転</button>
+    <a id="downloadLink" style="display:none;">ダウンロード</a>
+
+    <script>
+document.getElementById('reverseButton').addEventListener('click', async function() {
+    const input = document.getElementById('audioFile');
+    if (input.files.length === 0) {
+        alert('音声ファイルを選択してください。');
+        return;
+    }
+
+    const file = input.files[0];
+    const arrayBuffer = await file.arrayBuffer();
+    const audioContext = new (window.AudioContext || window.webkit.AudioContext)();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    // 波形を反転する
+    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+        const data = audioBuffer.getChannelData(channel);
+        for (let i = 0; i < data.length; i++) {
+            data[i] = -data[i]; // 波形反転
+        }
+    }
+
+    // 反転した音声を再エンコードする
+    const reversedAudioPromise = audioContext.startRendering();
+    const reversedAudio = await reversedAudioPromise;
+    const wavData = encodeWAV(reversedAudio);
+    
+    // ダウンロードリンクを作成
+    const blob = new Blob([wavData], { type: 'audio/wav' });
+    const url = URL.createObjectURL(blob);
+    const downloadLink = document.getElementById('downloadLink');
+    downloadLink.href = url;
+    downloadLink.download = 'reversed_audio.wav';
+    downloadLink.style.display = 'block';
+    downloadLink.textContent = 'ダウンロード';
+});
+
+// WAVフォーマットに変換する関数
+function encodeWAV(audioBuffer) {
+    const sampleRate = audioBuffer.sampleRate;
+    const numChannels = audioBuffer.numberOfChannels;
+    const numFrames = audioBuffer.length;
+
+    const byteRate = numChannels * sampleRate * 2; // 16-bit PCM
+    const bufferLength = 44 + numFrames * numChannels * 2; // header + audio data
+    const buffer = new ArrayBuffer(bufferLength);
+    const view = new DataView(buffer);
+    
+    // WAVヘッダーを作成
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, bufferLength - 8, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true); // サブチャンクのサイズ
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, numChannels * 2, true); // ブロックサイズ
+    view.setUint16(34, 16, true); // ビット深度
+    writeString(view, 36, 'data');
+    view.setUint32(40, numFrames * numChannels * 2, true); // データのサイズ
+
+    // オーディオデータを書き込む
+    for (let channel = 0; channel < numChannels; channel++) {
+        const data = audioBuffer.getChannelData(channel);
+        for (let i = 0; i < numFrames; i++) {
+            const sample = Math.max(-1, Math.min(1, data[i])); // 限界を設定
+            view.setInt16(44 + (i * numChannels + channel) * 2, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        }
+    }
+
+    return buffer;
+}
+
+// ヘッダーに文字列を書く
+function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+    }
+}
+   </script>
+</body>
+</html>
