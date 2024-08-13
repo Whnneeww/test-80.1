@@ -1,0 +1,74 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+  <meta charset="UTF-8"> 
+  <title>音声ファイル反転</title> 
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script> 
+</head> 
+<body> 
+  <h1>音声ファイル反転</h1> 
+  <input type="file" id="audioFile"> 
+  <button id="reverseButton">反転</button> 
+  <audio id="audioPlayer" controls></audio> 
+  <button id="downloadButton">ダウンロード</button> 
+ 
+  <script> 
+    let audio; 
+    let fft; 
+    let reversedAudio; 
+    let reversedBuffer; // 反転したオーディオデータのバッファ 
+ 
+    const audioFile = document.getElementById('audioFile'); 
+    const reverseButton = document.getElementById('reverseButton'); 
+    const audioPlayer = document.getElementById('audioPlayer'); 
+    const downloadButton = document.getElementById('downloadButton'); 
+ 
+    audioFile.addEventListener('change', (event) => { 
+      const file = event.target.files[0]; 
+      const reader = new FileReader(); 
+      reader.onload = (event) => { 
+        audio = new Audio(event.target.result); 
+        audioPlayer.src = event.target.result; 
+        fft = new p5.FFT(); 
+      }; 
+      reader.readAsDataURL(file); 
+    }); 
+ 
+    reverseButton.addEventListener('click', () => { 
+      if (audio) { 
+        reverseAudio = audio.cloneNode(); 
+        reverseAudio.currentTime = audio.duration; // 再生時間を反転させる 
+ 
+        // オーディオデータを取得し、反転 
+        const buffer = new p5.SoundFile(audio); 
+        buffer.load(audio.src, () => { 
+          reversedBuffer = buffer.reverse(); // 反転したオーディオバッファを保存 
+          reversedAudio.src = reversedBuffer.getURL(); 
+        }); 
+ 
+        audioPlayer.src = reversedAudio.src; // 反転したオーディオを再生 
+        audioPlayer.currentTime = 0; // 再生時間を0に戻す 
+      } else { 
+        alert("音声ファイルを選択してください"); 
+      } 
+    }); 
+ 
+    downloadButton.addEventListener('click', () => { 
+      if (reversedBuffer) { 
+        // 反転したオーディオバッファが取得できている場合のみダウンロード処理を実行 
+        const blob = reversedBuffer.getBlob('audio/wav'); // audio/wav としてblobを作成 
+        const url = URL.createObjectURL(blob); // blobからURLを作成 
+ 
+        const link = document.createElement('a'); 
+        link.href = url; 
+        link.download = 'reversed_audio.wav'; // ダウンロードファイル名 
+        link.click(); 
+ 
+        URL.revokeObjectURL(url); // URLを解放 
+      } else { 
+        alert("音声ファイルを反転してください"); 
+      } 
+    }); 
+  </script> 
+</body> 
+</html> 
