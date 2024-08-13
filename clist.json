@@ -1,0 +1,35 @@
+{
+  "title": "物語のタイトル",
+  "author": "著者名",
+  "id": 0,
+  "last-update": "2024/8/13/19:37",
+  "page": {
+    "file-path": "/home/82hb/",
+    "iid-list": [
+      {
+        "iid": 0,
+        "name": "本編"
+      }
+    ],
+    "list": [
+      {
+        "page-id": 1,
+        "iid": 0,
+        "title": "サブタイトル",
+        "file": "fairu1.stxt"
+      },
+      {
+        "page-id": 2,
+        "iid": 0,
+        "title": "サブタイトル",
+        "file": "fairu2.stxt"
+      },
+      {
+        "page-id": 3,
+        "iid": 0,
+        "title": "サブタイトル",
+        "file": "fairu3.stxt"
+      }
+    ]
+  }
+}
