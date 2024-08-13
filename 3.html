@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+        }
+        .sidebar {
+            width: 250px;
+            height: 100%;
+            background: #333;
+            color: white;
+            position: fixed;
+            right: -250px; /* Initially hidden */
+            transition: right 0.3s ease;
+        }
+        .sidebar.active {
+            right: 0; /* Slide in */
+        }
+        .sidebar h2 {
+            margin: 0;
+            padding: 10px;
+        }
+        .button {
+            padding: 10px 20px;
+            background: #fff;
+            color: #4CAF50;
+            border: none;
+            cursor: pointer;
+        }
+        .content {
+            margin-left: 260px; /* Sidebar width + some space */
+            padding: 10px;
+        }
+    </style>
+    <title>ウェブサイトタイトル</title>
+</head>
+<body>
+
+<header>
+    <div id="pageTitle">ページタイトル</div>
+    <button class="button" id="toggleBtn">目次</button>
+</header>
+
+<div class="sidebar" id="sidebar">
+    <h2>目次</h2>
+    <ul id="tocList"></ul>
+</div>
+
+<div class="content" id="content">
+    <h2>内容</h2>
+    <div id="fileContent">ファイルの内容がここに表示されます。</div>
+</div>
+
+<script>
+    const toggleBtn = document.getElementById('toggleBtn');
+    const sidebar = document.getElementById('sidebar');
+    const pageTitle = document.getElementById('pageTitle');
+    const tocList = document.getElementById('tocList');
+    const fileContent = document.getElementById('fileContent');
+
+    function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function fetchJson() {
+        fetch('clist.json')
+            .then(response => response.json())
+            .then(data => {
+                const p = getUrlParameter('p');
+                pageTitle.textContent = data.title; // デフォルトタイトル
+                tocList.innerHTML = '';
+
+                // 目次の作成
+                data.page.list.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item.title;
+                    tocList.appendChild(li);
+                });
+
+                if (p) {
+                    const section = data.page.list.find(item => item['page-id'] == p);
+
+                    if (section) {
+                        pageTitle.textContent = section.title;
+                        const filePath = data.page['file-path'] + section.file;
+
+                        // ファイルの内容を読み込み表示
+                        fetch(filePath)
+                            .then(response => response.text())
+                            .then(text => {
+                                fileContent.textContent = text;
+                            })
+                            .catch(error => {
+                                fileContent.textContent = 'ファイルの読み込みに失敗しました。';
+                                console.error('ファイルの取得に失敗しました', error);
+                            });
+                    } else {
+                        pageTitle.textContent = '未定義のセクション';
+                        fileContent.textContent = '';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('JSONの取得に失敗しました', error);
+                fileContent.textContent = 'データの取得に失敗しました。';
+            });
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+    });
+
+    window.addEventListener('load', () => {
+        fetchJson();
+    });
+</script>
+
+</body>
+</html>
